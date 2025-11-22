@@ -9,6 +9,16 @@ for _ in range(data_samples):
 	# Random number of devices that the user owns
 	outputs.append(random.randint(1, 10))
 
+def generate_sample():
+    region = random.choice(["US", "EU", "ASIA"])
+    session_id = random.randint(100000, 999999)
+    packets = random.randint(1, 50)
+    avg_size = random.uniform(100, 1500)
+    avg_time = random.uniform(0.2, 5)
+
+	input_data = InputData(region, session_id, packets, avg_size, avg_time, 0.1, 7.2, 5, 3)
+
+
 class InputData:
 	def __init__(self, region, session_id, packets, avg_size, avg_time, min_time, max_time, upload_batch, upload_single):
         self.region = region
@@ -22,7 +32,8 @@ class InputData:
         self.upload_single = upload_single
 	
 	def inject_noise(self):
-		self.packets += random.randint(5, 30)
+        self.packets += random.randint(-3, 10)
+        self.avg_time += random.uniform(-0.5, 2)
 
 class Packet:
 	def __init__(self, src, dest, size, data = None):
