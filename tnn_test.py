@@ -26,20 +26,25 @@ if __name__ == '__main__':
 	)
 	transformer.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), metrics=['accuracy'])
 
-	inputs = tf.random.uniform((64, 50), dtype=tf.int64, minval=0, maxval=input_vocab_size)
-	targets = tf.random.uniform((64, 50), dtype=tf.int64, minval=0, maxval=target_vocab_size)
+	# Create input and target sequences
+	inputs = tf.random.uniform((64, 50), dtype=tf.int32, minval=0, maxval=input_vocab_size)
+	targets = tf.random.uniform((64, 50), dtype=tf.int32, minval=0, maxval=target_vocab_size)
+
+	# Prepare shifted targets for teacher forcing
+	# tar_inp is fed to the decoder, tar_real is the prediction values
+	tar_inp = targets[:, :-1]
+	tar_real = targets[:, 1:]
 
 	look_ahead_mask = None
 	padding_mask = None
 
-	# TODO: Make training work
-	transformer.fit(x=(inputs, targets), y=targets, epochs=num_epochs)
+	transformer.fit(x=(inputs, tar_inp), y=tar_real, epochs=num_epochs)
 
-	output = transformer((inputs, targets), training=False, look_ahead_mask=look_ahead_mask, padding_mask=padding_mask)
-	output = tf.argmax(output, axis=-1)
+	output_logits = transformer((inputs, tar_inp), training=False, look_ahead_mask=look_ahead_mask, padding_mask=padding_mask)
+	output = tf.argmax(output_logits, axis=-1)
 
-	print('Targets:')
-	print(targets)
+	print('Targets (shifted):')
+	print(tar_real)
 	print('==========')
 	print('Outputs:')
 	print(output)
