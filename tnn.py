@@ -1,203 +1,255 @@
-# Source Citation: Used transformer neural network example from GeeksforGeeks
-# https://www.geeksforgeeks.org/deep-learning/transformer-model-from-scratch-using-tensorflow/
-# Made modifications to it to fit the noise injection experiment
+# Source Citation: Used Transformer Neural Network Example from Tensorflow
+# https://www.tensorflow.org/text/tutorials/transformer
+# Made modifications to it to fit noise injection experiment
 
-import tensorflow as tf
-from tensorflow.keras.layers import Dense, Input, Embedding, Dropout, LayerNormalization
-from tensorflow.keras.models import Model
 import numpy as np
+import tensorflow as tf
 
-# Gives an encoding value for a position / index value
-def positional_encoding(position, d_model):
-	angle_radians = np.arange(position)[:, np.newaxis] / np.power(10_000, (2 * (np.arange(d_model) // 2)) / np.float32(d_model))
-	angle_radians[:, 0::2] = np.sin(angle_radians[:, 0::2])
-	angle_radians[:, 1::2] = np.cos(angle_radians[:, 1::2])
-	return tf.cast(angle_radians[np.newaxis, ...], dtype=tf.float32)
+def positional_encoding(length, depth):
+	depth = depth/2
 
-# First part of a transformer block
-# Calculates the amount of attention to pay to a certain part of the input
-# Does this by calculating a context vector based on inputs
-class MultiHeadAttention(tf.keras.layers.Layer):
-	def __init__(self, d_model, num_heads):
-		super(MultiHeadAttention, self).__init__()
-		self.num_heads = num_heads
+	positions = np.arange(length)[:, np.newaxis]	# (seq, 1)
+	depths = np.arange(depth)[np.newaxis, :]/depth	# (1, depth)
+
+	angle_rates = 1 / (10000**depths)				# (1, depth)
+	angle_rads = positions * angle_rates			# (pos, depth)
+
+	pos_encoding = np.concatenate(
+			[np.sin(angle_rads), np.cos(angle_rads)],
+			axis=-1) 
+
+	return tf.cast(pos_encoding, dtype=tf.float32)
+
+class PositionalEmbedding(tf.keras.layers.Layer):
+	def __init__(self, vocab_size, d_model):
+		super().__init__()
 		self.d_model = d_model
-		assert d_model % num_heads == 0
-		self.depth = d_model // num_heads
-		# Weight values for queries, keys, and values
-		self.wq = Dense(d_model)
-		self.wk = Dense(d_model)
-		self.wv = Dense(d_model)
-		# Last layer of this part of the model (basic perceptron layer)
-		self.dense = Dense(d_model)
-	
-	# Splits inputs into multiple heads
-	# Output tensor will have shape (batch_size, num_heads, seq_len, depth)
-	def split_heads(self, x, batch_size):
-		x = tf.reshape(x, (batch_size, -1, self.num_heads, self.depth))
-		return tf.transpose(x, perm=[0, 2, 1, 3])
-	
-	# Calculates the attention values
-	def scaled_dot_product_attention(self, q, k, v, mask):
-		matmul_qk = tf.matmul(q, k, transpose_b=True)
-		dk = tf.cast(tf.shape(k)[-1], tf.float32)
-		scaled_attention_logits = matmul_qk / tf.math.sqrt(dk)
+		self.embedding = tf.keras.layers.Embedding(vocab_size, d_model, mask_zero=True) 
+		self.pos_encoding = positional_encoding(length=2048, depth=d_model)
 
-		if mask is not None:
-			scaled_attention_logits += (mask * -1e9)
-		
-		attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)
-		output = tf.matmul(attention_weights, v)
-		return output, attention_weights
+	def compute_mask(self, *args, **kwargs):
+		return self.embedding.compute_mask(*args, **kwargs)
 
-	# Takes input tensors (v, k, and q), feeds them through this layer, and gives this layer's output
-	def call(self, v, k, q, mask):
-		batch_size = tf.shape(q)[0]
-		q = self.wq(q)
-		k = self.wk(k)
-		v = self.wv(v)
-		q = self.split_heads(q, batch_size)
-		k = self.split_heads(k, batch_size)
-		v = self.split_heads(v, batch_size)
-
-		attention, attention_weights = self.scaled_dot_product_attention(q, k, v, mask)
-		attention = tf.transpose(attention, perm=[0, 2, 1, 3])
-		attention = tf.reshape(attention, (batch_size, -1, self.d_model))
-		output = self.dense(attention)
-		return output
-
-# Second part of transformer block
-# Basic neural network layers with position data from encoder
-class PositionwiseFeedforward(tf.keras.layers.Layer):
-	def __init__(self, d_model, dff):
-		super(PositionwiseFeedforward, self).__init__()
-		self.d_model = d_model
-		self.dff = dff
-		self.dense1 = Dense(dff, activation='relu')
-		self.dense2 = Dense(d_model)
-	
-	# Takes input tensor, feeds it through this layer, and gives this layer's output
 	def call(self, x):
-		x = self.dense1(x)
-		x = self.dense2(x)
+		length = tf.shape(x)[1]
+		x = self.embedding(x)
+		# This factor sets the relative scale of the embedding and positonal_encoding.
+		x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
+		x = x + self.pos_encoding[tf.newaxis, :length, :]
 		return x
 
-# Made up of a Multi-headed attention layer, and a position-wise feed forward layer
-# Basic building unit of a transformer model, used to build encoders and decoders
-class TransformerBlock(tf.keras.layers.Layer):
-	def __init__(self, d_model, num_heads, dff, dropout_rate=0.1):
-		super(TransformerBlock, self).__init__()
-		self.att = MultiHeadAttention(d_model, num_heads)
-		self.ffn = PositionwiseFeedforward(d_model, dff)
-		self.layernorm1 = LayerNormalization(epsilon=1e-6)
-		self.layernorm2 = LayerNormalization(epsilon=1e-6)
-		self.dropout1 = Dropout(dropout_rate)
-		self.dropout2 = Dropout(dropout_rate)
-	
-	# Takes input tensor, feeds it through this layer, and gives this layer's output
-	def call(self, x, training, mask):
-		# Masked self-attention (look-ahead)
-		attn_output = self.att(x, x, x, mask)
-		attn_output = self.dropout1(attn_output, training=training)
-		out1 = self.layernorm1(x + attn_output)
-		# Feedforward
-		ffn_output = self.ffn(out1)
-		ffn_output = self.dropout2(ffn_output, training=training)
-		out2 = self.layernorm2(out1 + ffn_output)
-		return out2
+class BaseAttention(tf.keras.layers.Layer):
+	def __init__(self, **kwargs):
+		super().__init__()
+		self.mha = tf.keras.layers.MultiHeadAttention(**kwargs)
+		self.layernorm = tf.keras.layers.LayerNormalization()
+		self.add = tf.keras.layers.Add()
 
+class CrossAttention(BaseAttention):
+	def call(self, x, context):
+		attn_output, attn_scores = self.mha(
+				query=x,
+				key=context,
+				value=context,
+				return_attention_scores=True)
 
-# Decoder block with masked self-attention followed by encoder-decoder cross-attention
-class DecoderBlock(tf.keras.layers.Layer):
-	def __init__(self, d_model, num_heads, dff, dropout_rate=0.1):
-		super(DecoderBlock, self).__init__()
-		self.att1 = MultiHeadAttention(d_model, num_heads)  # masked self-attention
-		self.att2 = MultiHeadAttention(d_model, num_heads)  # encoder-decoder attention
-		self.ffn = PositionwiseFeedforward(d_model, dff)
+		# Cache the attention scores for plotting later.
+		self.last_attn_scores = attn_scores
 
-		self.layernorm1 = LayerNormalization(epsilon=1e-6)
-		self.layernorm2 = LayerNormalization(epsilon=1e-6)
-		self.layernorm3 = LayerNormalization(epsilon=1e-6)
+		x = self.add([x, attn_output])
+		x = self.layernorm(x)
 
-		self.dropout1 = Dropout(dropout_rate)
-		self.dropout2 = Dropout(dropout_rate)
-		self.dropout3 = Dropout(dropout_rate)
+		return x
 
-	# Takes input tensor, feeds it through this layer, and gives this layer's output
-	def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
-		# Masked self-attention (look-ahead)
-		attn1 = self.att1(x, x, x, look_ahead_mask)
-		attn1 = self.dropout1(attn1, training=training)
-		out1 = self.layernorm1(x + attn1)
-		# Cross-attention with encoder output (keys/values from encoder, queries from decoder)
-		attn2 = self.att2(enc_output, enc_output, out1, padding_mask)
-		attn2 = self.dropout2(attn2, training=training)
-		out2 = self.layernorm2(out1 + attn2)
-		# Feedforward
-		ffn_output = self.ffn(out2)
-		ffn_output = self.dropout3(ffn_output, training=training)
-		out3 = self.layernorm3(out2 + ffn_output)
+class GlobalSelfAttention(BaseAttention):
+	def call(self, x):
+		attn_output = self.mha(
+				query=x,
+				value=x,
+				key=x)
+		x = self.add([x, attn_output])
+		x = self.layernorm(x)
+		return x
 
-		return out3
+class CausalSelfAttention(BaseAttention):
+	def call(self, x):
+		attn_output = self.mha(
+				query=x,
+				value=x,
+				key=x,
+				use_causal_mask = True)
+		x = self.add([x, attn_output])
+		x = self.layernorm(x)
+		return x
 
-# Converts inputs sequence into a set of embeddings with positional information
-# Made of embedding layer, dropout layer, and a list of transformer blocks
+class FeedForward(tf.keras.layers.Layer):
+	def __init__(self, d_model, dff, dropout_rate=0.1):
+		super().__init__()
+		self.seq = tf.keras.Sequential([
+			tf.keras.layers.Dense(dff, activation='relu'),
+			tf.keras.layers.Dense(d_model),
+			tf.keras.layers.Dropout(dropout_rate)
+		])
+		self.add = tf.keras.layers.Add()
+		self.layer_norm = tf.keras.layers.LayerNormalization()
+
+	def call(self, x):
+		x = self.add([x, self.seq(x)])
+		x = self.layer_norm(x) 
+		return x
+
+class EncoderLayer(tf.keras.layers.Layer):
+	def __init__(self,*, d_model, num_heads, dff, dropout_rate=0.1):
+		super().__init__()
+
+		self.self_attention = GlobalSelfAttention(
+				num_heads=num_heads,
+				key_dim=d_model,
+				dropout=dropout_rate)
+
+		self.ffn = FeedForward(d_model, dff)
+
+	def call(self, x):
+		x = self.self_attention(x)
+		x = self.ffn(x)
+		return x
+
 class Encoder(tf.keras.layers.Layer):
-	def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size, maximum_position_encoding, dropout_rate=0.1):
-		super(Encoder, self).__init__()
+	def __init__(self, *, num_layers, d_model, num_heads, dff, vocab_size, dropout_rate=0.1):
+		super().__init__()
+
 		self.d_model = d_model
 		self.num_layers = num_layers
-		self.embedding = Embedding(input_vocab_size, d_model)
-		self.pos_encoding = positional_encoding(maximum_position_encoding, d_model)
-		self.dropout = Dropout(dropout_rate)
-		self.enc_layers = [TransformerBlock(d_model, num_heads, dff, dropout_rate) for _ in range(num_layers)]
-	
-	# Takes input tensor, feeds it through this layer, and gives this layer's output
-	def call(self, x, training, mask):
-		seq_len = tf.shape(x)[1]
-		x = self.embedding(x)
-		x += self.pos_encoding[:, :seq_len, :]
-		x = self.dropout(x, training=training)
+
+		self.pos_embedding = PositionalEmbedding(
+			vocab_size=vocab_size, d_model=d_model)
+
+		self.enc_layers = [
+			EncoderLayer(d_model=d_model,
+				num_heads=num_heads,
+				dff=dff,
+				dropout_rate=dropout_rate)
+			for _ in range(num_layers)]
+		self.dropout = tf.keras.layers.Dropout(dropout_rate)
+
+	def call(self, x):
+		# `x` is token-IDs shape: (batch, seq_len)
+		x = self.pos_embedding(x)	# Shape `(batch_size, seq_len, d_model)`.
+
+		# Add dropout.
+		x = self.dropout(x)
+
 		for i in range(self.num_layers):
-			x = self.enc_layers[i](x, training=training, mask=mask)
+			x = self.enc_layers[i](x)
+
+		return x	# Shape `(batch_size, seq_len, d_model)`.
+
+class DecoderLayer(tf.keras.layers.Layer):
+	def __init__(self, *, d_model, num_heads, dff, dropout_rate=0.1):
+		super(DecoderLayer, self).__init__()
+
+		self.causal_self_attention = CausalSelfAttention(
+			num_heads=num_heads,
+			key_dim=d_model,
+			dropout=dropout_rate)
+
+		self.cross_attention = CrossAttention(
+			num_heads=num_heads,
+			key_dim=d_model,
+			dropout=dropout_rate)
+
+		self.ffn = FeedForward(d_model, dff)
+
+	def call(self, x, context):
+		x = self.causal_self_attention(x=x)
+		x = self.cross_attention(x=x, context=context)
+
+		# Cache the last attention scores for plotting later
+		self.last_attn_scores = self.cross_attention.last_attn_scores
+
+		x = self.ffn(x)	# Shape `(batch_size, seq_len, d_model)`.
 		return x
 
-# Generates output sequence from encoder outputs and previously generated output sequences
-# Made of embedding layer, dropout layer, and a list of transformer blocks
 class Decoder(tf.keras.layers.Layer):
-	def __init__(self, num_layers, d_model, num_heads, dff, taret_vocab_size, maximum_position_encoding, dropout_rate=0.1):
+	def __init__(self, *, num_layers, d_model, num_heads, dff, vocab_size, dropout_rate=0.1):
 		super(Decoder, self).__init__()
+
 		self.d_model = d_model
 		self.num_layers = num_layers
-		self.embedding = Embedding(taret_vocab_size, d_model)
-		self.pos_encoding = positional_encoding(maximum_position_encoding, d_model)
-		self.dropout = Dropout(dropout_rate)
-		# Use DecoderBlock (masked self-attn + cross-attn)
-		self.dec_layers = [DecoderBlock(d_model, num_heads, dff, dropout_rate) for _ in range(num_layers)]
-	
-	# Takes input tensor, feeds it through this layer, and gives this layer's output
-	def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
-		seq_len = tf.shape(x)[1]
-		x = self.embedding(x)
-		x += self.pos_encoding[:, :seq_len, :]
-		x = self.dropout(x, training=training)
-		for i in range(self.num_layers):
-			x = self.dec_layers[i](x, enc_output, training=training, look_ahead_mask=look_ahead_mask, padding_mask=padding_mask)
 
+		self.pos_embedding = PositionalEmbedding(vocab_size=vocab_size,
+			d_model=d_model)
+		self.dropout = tf.keras.layers.Dropout(dropout_rate)
+		self.dec_layers = [
+			DecoderLayer(d_model=d_model, num_heads=num_heads,
+				dff=dff, dropout_rate=dropout_rate)
+			for _ in range(num_layers)]
+
+		self.last_attn_scores = None
+
+	def call(self, x, context):
+		# `x` is token-IDs shape (batch, target_seq_len)
+		x = self.pos_embedding(x)	# (batch_size, target_seq_len, d_model)
+
+		x = self.dropout(x)
+
+		for i in range(self.num_layers):
+			x	= self.dec_layers[i](x, context)
+
+		self.last_attn_scores = self.dec_layers[-1].last_attn_scores
+
+		# The shape of x is (batch_size, target_seq_len, d_model).
 		return x
 
-# An encoder, decoder, and a final basic perceptron layer
 class Transformer(tf.keras.Model):
-	def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size, maximum_position_encoding, dropout_rate=0.1):
-		super(Transformer, self).__init__()
-		self.encoder = Encoder(num_layers, d_model, num_heads, dff, input_vocab_size, maximum_position_encoding, dropout_rate)
-		self.decoder = Decoder(num_layers, d_model, num_heads, dff, target_vocab_size, maximum_position_encoding, dropout_rate)
-		self.final_layer = Dense(target_vocab_size)
-	
-	def call(self, inputs, training=False, look_ahead_mask=None, padding_mask=None):
-		inp, tar = inputs
-		enc_output = self.encoder(inp, training=training, mask=padding_mask)
-		dec_output= self.decoder(tar, enc_output, training=training, look_ahead_mask=look_ahead_mask, padding_mask=padding_mask)
-		final_output = self.final_layer(dec_output)
+	def __init__(self, *, num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size, dropout_rate=0.1):
+		super().__init__()
+		self.encoder = Encoder(num_layers=num_layers, d_model=d_model,
+			num_heads=num_heads, dff=dff,
+			vocab_size=input_vocab_size,
+			dropout_rate=dropout_rate)
 
-		return final_output
+		self.decoder = Decoder(num_layers=num_layers, d_model=d_model,
+			num_heads=num_heads, dff=dff,
+			vocab_size=target_vocab_size,
+			dropout_rate=dropout_rate)
+
+		self.final_layer = tf.keras.layers.Dense(target_vocab_size)
+
+	def call(self, inputs):
+		# To use a Keras model with `.fit` you must pass all your inputs in the
+		# first argument.
+		context, x	= inputs
+
+		context = self.encoder(context)	# (batch_size, context_len, d_model)
+
+		x = self.decoder(x, context)	# (batch_size, target_len, d_model)
+
+		# Final linear layer output.
+		logits = self.final_layer(x)	# (batch_size, target_len, target_vocab_size)
+
+		try:
+			# Drop the keras mask, so it doesn't scale the losses/metrics.
+			# b/250038731
+			del logits._keras_mask
+		except AttributeError:
+			pass
+
+		# Return the final output and the attention weights.
+		return logits
+
+class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+	def __init__(self, d_model, warmup_steps=4000):
+		super().__init__()
+
+		self.d_model = d_model
+		self.d_model = tf.cast(self.d_model, tf.float32)
+
+		self.warmup_steps = warmup_steps
+
+	def __call__(self, step):
+		step = tf.cast(step, dtype=tf.float32)
+		arg1 = tf.math.rsqrt(step)
+		arg2 = step * (self.warmup_steps ** -1.5)
+
+		return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
