@@ -1,0 +1,7 @@
+Control Trial Results (20 training cycles):
+
+Average overall loss:			3.8060009241104127
+Average age loss (mae):			11.771370000000001
+Average gender accuracy:		33.458999999999996
+Average condition accuracy:		86.66749999999999
+Average device count loss (mae):	2.505235
