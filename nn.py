@@ -38,9 +38,6 @@ if __name__ == '__main__':
 	ranges = max_vals - min_vals
 	input_train_data = (input_train_data - min_vals) / ranges
 	input_validate_data = (input_validate_data - min_vals) / ranges
-	print(input_train_data)
-	print(input_validate_data)
-	exit()
 
 	input_shape = [input_train_data.shape[1]]
 	output_shape = output_train_data.shape[1]
