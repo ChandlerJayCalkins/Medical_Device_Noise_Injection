@@ -8,12 +8,15 @@ from random import randint
 def print_bar():
 	print('====================')
 
+# Returns a dataframe of a single column from another dataframe
 def extract_dataframe_column(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
 	return df.drop(df.columns.difference([column_name]), axis = 1)
 
+# Returns the mean average error loss between 2 dataframes
 def compute_mae(a: pd.DataFrame, b: pd.DataFrame) -> float:
 	return (a - b).abs().mean().mean()
 
+# Returns the accuracy between 2 dataframes (percentage of values that are the same)
 def compute_accuracy(a: pd.DataFrame, b: pd.DataFrame) -> float:
 	return (a == b).mean().mean() * 100
 
@@ -131,24 +134,30 @@ if __name__ == '__main__':
 	# Show the mode's overall loss performance
 	print(f'Overall model loss performance: {overall_loss}')
 
+	# Turn predictions into dataframe for getting evaluation metrics for each individual column
 	predictions_dataframe = pd.DataFrame(predictions, columns = output_column_names)
+	# Reset indexes in actual outputs so they're the same as the predictions dataframe, allowing them to do comparisons with each other in compute_accuracy()
 	actual_values = output_validate_data.reset_index(drop = True)
 
+	# Get columns of each of the predicted values
 	age_predictions = extract_dataframe_column(predictions_dataframe, 'age')
 	gender_predictions = extract_dataframe_column(predictions_dataframe, 'gender')
 	condition_predictions = extract_dataframe_column(predictions_dataframe, 'condition')
 	device_count_predictions = extract_dataframe_column(predictions_dataframe, 'device_count')
 
+	# Get columns of each of the actual values
 	actual_ages = extract_dataframe_column(actual_values, 'age')
 	actual_genders = extract_dataframe_column(actual_values, 'gender')
 	actual_conditions = extract_dataframe_column(actual_values, 'condition')
 	actual_device_counts = extract_dataframe_column(actual_values, 'device_count')
 
+	# Compute evaluation metrics for each column
 	age_mae_loss = compute_mae(age_predictions, actual_ages)
 	gender_accuracy = compute_accuracy(gender_predictions, actual_genders)
 	condition_accuracy = compute_accuracy(condition_predictions, actual_conditions)
 	device_count_mae_loss = compute_mae(device_count_predictions, actual_device_counts)
 
+	# Show evaluation metrics for each column
 	print(f'Age loss:\t\t{age_mae_loss}')
 	print(f'Gender accuracy:\t{gender_accuracy}%')
 	print(f'Condition accuracy:\t{condition_accuracy}%')
