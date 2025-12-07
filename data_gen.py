@@ -93,7 +93,7 @@ def generate_sample(rng: random.Random, profile_name: str = 'healthy_young') -> 
     device_count = rng.randint(1, 10)
 
     # Build InputData (packet/session info) and OutputData (profile/demographics)
-    input_data = InputData(region, session_id, packets, avg_size, avg_time, 0.1, 7.2, 5, 3)
+    input_data = InputData(region, session_id, packets, avg_size, avg_time)
     output_data = OutputData(age, gender, condition, device_count)
     return input_data, output_data
 
