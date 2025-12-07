@@ -92,39 +92,13 @@ def generate_sample(rng: random.Random, profile_name: str = 'healthy_young') -> 
     gender = rng.randint(0, 2) # we could tie gender to a profile if needed
     device_count = rng.randint(1, 10)
 
-    # Build InputData (profile/demographics) and OutputData (packet/session info)
-    input_data = InputData(age, gender, condition, device_count)
-    output_data = OutputData(region, session_id, packets, avg_size, avg_time, 0.1, 7.2, 5, 3)
+    # Build InputData (packet/session info) and OutputData (profile/demographics)
+    input_data = InputData(region, session_id, packets, avg_size, avg_time, 0.1, 7.2, 5, 3)
+    output_data = OutputData(age, gender, condition, device_count)
     return input_data, output_data
 
 
 class InputData:
-    def __init__(self, age, gender, condition, device_count):
-        self.age = age
-        self.gender = gender
-        self.condition = condition
-        self.device_count = device_count
-
-    def to_dict(self):
-        return {
-            'age': self.age,
-            'gender': self.gender,
-            'condition': self.condition,
-            'device_count': self.device_count,
-        }
-
-    def __repr__(self):
-        return f"InputData(age={self.age}, gender={self.gender}, condition={self.condition}, device_count={self.device_count})"
-
-class Packet:
-	def __init__(self, src, dest, size, data = None):
-		self.src = src
-		self.dest = dest
-		self.size = size
-		self.data = data
-
-
-class OutputData:
     def __init__(self, region, session_id, packets, avg_size, avg_time, min_time, max_time, upload_batch, upload_single):
         self.region = region
         self.session_id = session_id
@@ -137,7 +111,7 @@ class OutputData:
         self.upload_single = upload_single
 
     def inject_noise(self, noise_type: str = 'gaussian', level: float = 0.1, rng: random.Random = None):
-        """Inject noise into numeric packet/session fields.
+        """Inject noise into numeric fields.
 
         noise_type: 'gaussian' or 'uniform'
         level: relative noise magnitude (fractional). For gaussian, treated as relative stddev; for uniform, as max relative amplitude.
@@ -178,7 +152,33 @@ class OutputData:
         }
 
     def __repr__(self):
-        return f"OutputData(region={self.region}, session_id={self.session_id}, packets={self.packets}, avg_size={self.avg_size:.2f}, avg_time={self.avg_time:.3f})"
+        return f"InputData(region={self.region}, session_id={self.session_id}, packets={self.packets}, avg_size={self.avg_size:.2f}, avg_time={self.avg_time:.3f})"
+
+class Packet:
+	def __init__(self, src, dest, size, data = None):
+		self.src = src
+		self.dest = dest
+		self.size = size
+		self.data = data
+
+
+class OutputData:
+    def __init__(self, age, gender, condition, device_count):
+        self.age = age
+        self.gender = gender
+        self.condition = condition
+        self.device_count = device_count
+
+    def to_dict(self):
+        return {
+            'age': self.age,
+            'gender': self.gender,
+            'condition': self.condition,
+            'device_count': self.device_count,
+        }
+
+    def __repr__(self):
+        return f"OutputData(age={self.age}, gender={self.gender}, condition={self.condition}, device_count={self.device_count})"
 
 
 def main():
@@ -206,7 +206,7 @@ def main():
     for _ in range(args.samples):
         inp, out = generate_sample(rng, profile_name=args.profile)
         if args.noise:
-            out.inject_noise(noise_type=args.noise_type, level=args.noise_level, rng=rng)
+            inp.inject_noise(noise_type=args.noise_type, level=args.noise_level, rng=rng)
         samples.append((inp, out))
 
     inputs.clear()
