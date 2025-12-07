@@ -20,7 +20,7 @@ if __name__ == '__main__':
 			inputs.append(i.to_list())
 			outputs.append(o.to_list())
 
-	input_column_names = ['region', 'session_id', 'packets', 'avg_size', 'avg_time', 'min_time', 'max_time', 'upload_batch', 'upload_single']
+	input_column_names = ['region', 'session_id', 'packets', 'avg_size', 'avg_time']
 	output_column_names = ['age', 'gender', 'condition', 'device_count']
 
 	dataframe = pd.DataFrame(np.c_[inputs, outputs], columns = input_column_names + output_column_names)
@@ -38,6 +38,9 @@ if __name__ == '__main__':
 	ranges = max_vals - min_vals
 	input_train_data = (input_train_data - min_vals) / ranges
 	input_validate_data = (input_validate_data - min_vals) / ranges
+	print(input_train_data)
+	print(input_validate_data)
+	exit()
 
 	input_shape = [input_train_data.shape[1]]
 	output_shape = output_train_data.shape[1]
