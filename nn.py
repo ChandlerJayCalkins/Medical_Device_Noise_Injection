@@ -59,12 +59,16 @@ if __name__ == '__main__':
 	])
 
 	model.compile(optimizer = 'adam', loss = 'mae')
-	model.fit(input_train_data, output_train_data, validation_data = (input_validate_data, output_validate_data), batch_size = input_train_data.shape[0], epochs = 100)
+	model.fit(input_train_data, output_train_data, validation_data = (input_validate_data, output_validate_data), batch_size = input_train_data.shape[0], epochs = 200)
 
-	predictions = model.predict(input_validate_data)
-	print(predictions.shape)
+	predictions = np.round(model.predict(input_validate_data))
+	if (predictions.shape != output_validate_data.shape):
+		print(f'ERROR: Predictions & actual values aren\'t the same shape. Predictions: {predictions.shape}, Actual: {output_validate_data.shape}')
+		exit(1)
 	print('Sample results:')
-	for i in range(5):
-		prediction = predictions[i]
-		actual = output_validate_data.iloc[i].to_numpy()
-		print('Prediction:', prediction, '| Actual:', actual)
+	for row in range(3):
+		prediction = predictions[row]
+		actual = output_validate_data.iloc[row].to_numpy()
+		print(f'Prediction:\t{prediction}')
+		print(f'Actual:\t\t{actual}')
+		print('=====')
