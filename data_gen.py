@@ -99,16 +99,12 @@ def generate_sample(rng: random.Random, profile_name: str = 'healthy_young') -> 
 
 
 class InputData:
-    def __init__(self, region, session_id, packets, avg_size, avg_time, min_time, max_time, upload_batch, upload_single):
+    def __init__(self, region, session_id, packets, avg_size, avg_time):
         self.region = region
         self.session_id = session_id
         self.packets = packets
         self.avg_size = avg_size
         self.avg_time = avg_time
-        self.min_time = min_time
-        self.max_time = max_time
-        self.upload_batch = upload_batch
-        self.upload_single = upload_single
 
     def inject_noise(self, noise_type: str = 'gaussian', level: float = 0.1, rng: random.Random = None):
         """Inject noise into numeric fields.
@@ -144,11 +140,7 @@ class InputData:
             'session_id': self.session_id,
             'packets': self.packets,
             'avg_size': self.avg_size,
-            'avg_time': self.avg_time,
-            'min_time': self.min_time,
-            'max_time': self.max_time,
-            'upload_batch': self.upload_batch,
-            'upload_single': self.upload_single,
+            'avg_time': self.avg_time
         }
     
     def to_list(self):
@@ -157,11 +149,7 @@ class InputData:
             self.session_id,
             self.packets,
             self.avg_size,
-            self.avg_time,
-            self.min_time,
-            self.max_time,
-            self.upload_batch,
-            self.upload_single
+            self.avg_time
 		]
 
     def __repr__(self):
