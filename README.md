@@ -36,10 +36,12 @@ Command-line flags
 - `--noise-level`: Relative noise magnitude as a fraction (default 0.1)
 - `--seed`: Integer seed for deterministic RNG
 - `--preview`: Number of sample pairs to print and exit (default 5)
+- `--profile <name>` to generate samples from a named profile.
+- `--list-profiles` to list available profiles.
 
 Demographics and encodings
 - `region` is numeric (1..5) where 1=NA, 2=EU, 3=AS, 4=SA, 5=AF.
 - `gender` is now encoded as an integer: 0 = M, 1 = F, 2 = O.
 - `condition` is now encoded as an integer: 0 = healthy, 1 = arrhythmia, 2 = hypertension.
 
-Output data of the samples is stored in the `outputs` list, but we can rewire this however works best for input into the TNN
+Output data of the samples is stored in the `outputs` list, but we can rewire this however works best for input into the NN
