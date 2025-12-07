@@ -76,13 +76,17 @@ if __name__ == '__main__':
 	# Smaller learning rate means it improves slower, but more precisely (takes more epochs (more time) to get better, but will be more accurate when it's done)
 	# Default learning rate for Adam optimizer is 0.001
 	optimizer = tf.keras.optimizers.Adam(learning_rate = 0.01)
-	# Make the model ready for training and predicting
+	# Set the model's optimizer and loss function (to determine how good it's doing), and make it ready to train and predict
 	model.compile(optimizer = optimizer, loss = 'mae')
 
 	# Train the model on the data
 	# Give it validation data as well to see its loss score (how well it performs) after each epoch (training cycle)
 	# Change the epochs to have it do more or less training cycles
-	model.fit(input_train_data, output_train_data, validation_data = (input_validate_data, output_validate_data), batch_size = input_train_data.shape[0], epochs = 100)
+	model.fit(input_train_data, output_train_data, validation_data = (input_validate_data, output_validate_data), batch_size = input_train_data.shape[0], epochs = 750)
+
+	optimizer = tf.keras.optimizers.Adam(learning_rate = 0.001)
+	model.compile(optimizer = optimizer, loss = 'mae')
+	model.fit(input_train_data, output_train_data, validation_data = (input_validate_data, output_validate_data), batch_size = input_train_data.shape[0], epochs = 1000)
 
 	# Show 3 example outputs from the model from the validation data juxtaposed by the actual value
 	predictions = np.round(model.predict(input_validate_data))
