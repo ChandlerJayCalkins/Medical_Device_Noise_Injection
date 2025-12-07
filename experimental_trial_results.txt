@@ -1,0 +1,162 @@
+Experimental Trial Results (20 training cycles):
+
+==========
+Noise type: gaussian | Noise level: 0.1
+
+Average overall loss:			3.8715068101882935
+Average age loss (mae):			12.0183
+Average gender accuracy:		33.4445
+Average condition accuracy:		85.09849999999999
+Average device count loss (mae):	2.5085699999999997
+==========
+Noise type: gaussian | Noise level: 0.2
+
+Average overall loss:			3.970553827285767
+Average age loss (mae):			12.376895
+Average gender accuracy:		33.321999999999996
+Average condition accuracy:		83.3005
+Average device count loss (mae):	2.4970100000000004
+==========
+Noise type: gaussian | Noise level: 0.3
+
+Average overall loss:			4.120978808403015
+Average age loss (mae):			12.91586
+Average gender accuracy:		33.268
+Average condition accuracy:		78.76950000000002
+Average device count loss (mae):	2.5003749999999996
+==========
+Noise type: gaussian | Noise level: 0.4
+
+Average overall loss:			4.266230273246765
+Average age loss (mae):			13.46105
+Average gender accuracy:		33.2345
+Average condition accuracy:		75.31750000000001
+Average device count loss (mae):	2.502825
+==========
+Noise type: gaussian | Noise level: 0.5
+
+Average overall loss:			4.383557772636413
+Average age loss (mae):			13.879130000000004
+Average gender accuracy:		33.255500000000005
+Average condition accuracy:		69.9265
+Average device count loss (mae):	2.5026650000000004
+==========
+Noise type: gaussian | Noise level: 0.6
+
+Average overall loss:			4.479494857788086
+Average age loss (mae):			14.22606
+Average gender accuracy:		33.339000000000006
+Average condition accuracy:		68.044
+Average device count loss (mae):	2.50321
+==========
+Noise type: gaussian | Noise level: 0.7
+
+Average overall loss:			4.548664093017578
+Average age loss (mae):			14.480615
+Average gender accuracy:		33.336499999999994
+Average condition accuracy:		63.74000000000001
+Average device count loss (mae):	2.502885
+==========
+Noise type: gaussian | Noise level: 0.8
+
+Average overall loss:			4.589440703392029
+Average age loss (mae):			14.632160000000002
+Average gender accuracy:		33.204499999999996
+Average condition accuracy:		63.19649999999999
+Average device count loss (mae):	2.498845
+==========
+Noise type: gaussian | Noise level: 0.9
+
+Average overall loss:			4.626200699806214
+Average age loss (mae):			14.758750000000001
+Average gender accuracy:		33.451499999999996
+Average condition accuracy:		60.56850000000001
+Average device count loss (mae):	2.5013149999999995
+==========
+Noise type: gaussian | Noise level: 1.0
+
+Average overall loss:			4.656160187721253
+Average age loss (mae):			14.857039999999998
+Average gender accuracy:		33.3035
+Average condition accuracy:		58.611500000000014
+Average device count loss (mae):	2.499325
+==========
+Noise type: uniform | Noise level: 0.1
+
+Average overall loss:			3.8300487875938414
+Average age loss (mae):			11.863834999999996
+Average gender accuracy:		33.248000000000005
+Average condition accuracy:		85.67699999999999
+Average device count loss (mae):	2.5005650000000004
+==========
+Noise type: uniform | Noise level: 0.2
+
+Average overall loss:			3.8684197664260864
+Average age loss (mae):			12.000745
+Average gender accuracy:		33.2385
+Average condition accuracy:		85.131
+Average device count loss (mae):	2.4980649999999995
+==========
+Noise type: uniform | Noise level: 0.3
+
+Average overall loss:			3.9642159700393678
+Average age loss (mae):			12.362195
+Average gender accuracy:		33.463499999999996
+Average condition accuracy:		82.16799999999999
+Average device count loss (mae):	2.497395
+==========
+Noise type: uniform | Noise level: 0.4
+
+Average overall loss:			4.019692528247833
+Average age loss (mae):			12.56647
+Average gender accuracy:		33.226
+Average condition accuracy:		81.9045
+Average device count loss (mae):	2.5015600000000004
+==========
+Noise type: uniform | Noise level: 0.5
+
+Average overall loss:			4.112554621696472
+Average age loss (mae):			12.88712
+Average gender accuracy:		33.535000000000004
+Average condition accuracy:		78.183
+Average device count loss (mae):	2.492625
+==========
+Noise type: uniform | Noise level: 0.6
+
+Average overall loss:			4.202331447601319
+Average age loss (mae):			13.202445
+Average gender accuracy:		33.218999999999994
+Average condition accuracy:		76.63149999999999
+Average device count loss (mae):	2.4989800000000004
+==========
+Noise type: uniform | Noise level: 0.7
+
+Average overall loss:			4.306445932388305
+Average age loss (mae):			13.588715000000002
+Average gender accuracy:		33.124
+Average condition accuracy:		73.19999999999999
+Average device count loss (mae):	2.495705
+==========
+Noise type: uniform | Noise level: 0.8
+
+Average overall loss:			4.388829445838928
+Average age loss (mae):			13.898179999999996
+Average gender accuracy:		33.504
+Average condition accuracy:		69.0805
+Average device count loss (mae):	2.501335
+==========
+Noise type: uniform | Noise level: 0.9
+
+Average overall loss:			4.475293469429016
+Average age loss (mae):			14.221080000000004
+Average gender accuracy:		33.306000000000004
+Average condition accuracy:		67.756
+Average device count loss (mae):	2.49756
+==========
+Noise type: uniform | Noise level: 1.0
+
+Average overall loss:			4.499164891242981
+Average age loss (mae):			14.287090000000001
+Average gender accuracy:		33.2135
+Average condition accuracy:		66.0355
+Average device count loss (mae):	2.498895
