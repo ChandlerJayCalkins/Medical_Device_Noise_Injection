@@ -235,7 +235,7 @@ def experimental_trial(result_file: str, test_cycles: int, noise_type: str, nois
 # test_cycles is the number of times to run the control trial
 def experimental_trials(result_file: str, test_cycles: int):
 	with open(result_file, 'w') as file:
-		file.write('Experimental Trial Results:\n\n')
+		file.write(f'Experimental Trial Results ({test_cycles} training cycles):\n\n')
 	noise_types = ['gaussian', 'uniform']
 	for noise_type in noise_types:
 		for i in range(1, 11):
