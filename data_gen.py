@@ -150,6 +150,19 @@ class InputData:
             'upload_batch': self.upload_batch,
             'upload_single': self.upload_single,
         }
+    
+    def to_list(self):
+        return [
+            self.region,
+            self.session_id,
+            self.packets,
+            self.avg_size,
+            self.avg_time,
+            self.min_time,
+            self.max_time,
+            self.upload_batch,
+            self.upload_single
+		]
 
     def __repr__(self):
         return f"InputData(region={self.region}, session_id={self.session_id}, packets={self.packets}, avg_size={self.avg_size:.2f}, avg_time={self.avg_time:.3f})"
@@ -176,23 +189,30 @@ class OutputData:
             'condition': self.condition,
             'device_count': self.device_count,
         }
+    
+    def to_list(self):
+        return [
+            self.age,
+            self.gender,
+            self.condition,
+            self.device_count
+		]
 
     def __repr__(self):
         return f"OutputData(age={self.age}, gender={self.gender}, condition={self.condition}, device_count={self.device_count})"
 
+parser = argparse.ArgumentParser(description='Generate synthetic samples. Optionally inject noise.')
+parser.add_argument('--samples', type=int, default=10000, help='Number of samples to generate')
+parser.add_argument('--noise', action='store_true', help='Enable noise injection')
+parser.add_argument('--noise-type', choices=['gaussian', 'uniform'], default='gaussian', help='Noise distribution to use')
+parser.add_argument('--noise-level', type=float, default=0.1, help='Relative noise level (fraction). 0.1 means ~10%%')
+parser.add_argument('--seed', type=int, default=None, help='Random seed for reproducible samples')
+parser.add_argument('--preview', type=int, default=5, help='Print this many sample pairs to stdout and exit')
+parser.add_argument('--profile', type=str, default='healthy_young', help='Profile name to use for generation')
+parser.add_argument('--list-profiles', action='store_true', help='List available generation profiles and exit')
+args = parser.parse_args()
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate synthetic samples. Optionally inject noise.')
-    parser.add_argument('--samples', type=int, default=10000, help='Number of samples to generate')
-    parser.add_argument('--noise', action='store_true', help='Enable noise injection')
-    parser.add_argument('--noise-type', choices=['gaussian', 'uniform'], default='gaussian', help='Noise distribution to use')
-    parser.add_argument('--noise-level', type=float, default=0.1, help='Relative noise level (fraction). 0.1 means ~10%%')
-    parser.add_argument('--seed', type=int, default=None, help='Random seed for reproducible samples')
-    parser.add_argument('--preview', type=int, default=5, help='Print this many sample pairs to stdout and exit')
-    parser.add_argument('--profile', type=str, default='healthy_young', help='Profile name to use for generation')
-    parser.add_argument('--list-profiles', action='store_true', help='List available generation profiles and exit')
-    args = parser.parse_args()
-
     if args.list_profiles:
         print(json.dumps({'profiles': list(PROFILES.keys())}, indent=2))
         return
